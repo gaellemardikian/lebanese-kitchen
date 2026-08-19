@@ -917,6 +917,211 @@ const RECIPES = [
     ],
     tags: ["bread", "breakfast", "anise", "sesame", "vegan"]
   }
+,
+  {
+    id: 31,
+    name: "Maakarone bil Lahme",
+    nameAr: "مكرونة باللحمة",
+    category: "main",
+    time: 35,
+    servings: 4,
+    difficulty: "easy",
+    image: "🍝",
+    description: "Lebanese pasta with spiced ground beef in tomato sauce — a weeknight staple in every Lebanese home.",
+    ingredients: [
+      { item: "pasta", amount: "400g (penne or rigatoni)" },
+      { item: "ground beef", amount: "400g" },
+      { item: "onion", amount: "1 large, diced" },
+      { item: "garlic", amount: "3 cloves, minced" },
+      { item: "tomato paste", amount: "2 tbsp" },
+      { item: "canned tomatoes", amount: "400g" },
+      { item: "allspice", amount: "1 tsp" },
+      { item: "cinnamon", amount: "½ tsp" },
+      { item: "black pepper", amount: "½ tsp" },
+      { item: "salt", amount: "to taste" },
+      { item: "olive oil", amount: "2 tbsp" },
+      { item: "pine nuts", amount: "2 tbsp, toasted (optional)" }
+    ],
+    steps: [
+      "Cook pasta in heavily salted boiling water until al dente. Reserve ½ cup pasta water, then drain.",
+      "Brown ground beef in a dry pan over high heat, breaking it up. Drain excess fat.",
+      "Add olive oil, onion, and garlic to the pan. Sauté 5 min until soft.",
+      "Stir in tomato paste, cook 2 min. Add canned tomatoes, allspice, cinnamon, pepper, and salt.",
+      "Simmer sauce 15 min until thickened. Loosen with pasta water if needed.",
+      "Toss pasta into the sauce. Serve topped with toasted pine nuts."
+    ],
+    tags: ["pasta", "meat", "tomato", "quick", "family"]
+  },
+  {
+    id: 32,
+    name: "Sheikh el Mehche",
+    nameAr: "شيخ المحشي",
+    category: "main",
+    time: 60,
+    servings: 4,
+    difficulty: "medium",
+    image: "🍆",
+    description: "Baby eggplants stuffed with spiced ground beef and pine nuts, braised in tomato sauce — a true Lebanese classic.",
+    ingredients: [
+      { item: "baby eggplants", amount: "8 small" },
+      { item: "ground beef", amount: "300g" },
+      { item: "pine nuts", amount: "3 tbsp" },
+      { item: "onion", amount: "1 medium, finely diced" },
+      { item: "tomato paste", amount: "2 tbsp" },
+      { item: "canned tomatoes", amount: "400g" },
+      { item: "garlic", amount: "2 cloves" },
+      { item: "allspice", amount: "1 tsp" },
+      { item: "cinnamon", amount: "½ tsp" },
+      { item: "salt", amount: "to taste" },
+      { item: "vegetable oil", amount: "for frying" },
+      { item: "olive oil", amount: "1 tbsp" }
+    ],
+    steps: [
+      "Peel a lengthwise strip from each eggplant (keeps them from splitting). Fry in hot oil until golden all over. Set aside to drain.",
+      "Sauté onion and pine nuts in olive oil until golden. Add beef, cook until browned. Season with allspice, cinnamon, salt.",
+      "Cut a slit lengthwise in each fried eggplant without cutting through. Gently stuff with meat mixture.",
+      "In a wide pot, mix canned tomatoes, tomato paste, garlic, salt, and ½ cup water. Bring to simmer.",
+      "Nestle stuffed eggplants in the tomato sauce in a single layer.",
+      "Cover and simmer on low heat 25-30 min until eggplants are very tender and sauce thickens.",
+      "Serve with Lebanese rice and vermicelli."
+    ],
+    tags: ["eggplant", "stuffed", "meat", "tomato", "festive"]
+  },
+  {
+    id: 33,
+    name: "Kousa Mehche",
+    nameAr: "كوسا محشي",
+    category: "main",
+    time: 75,
+    servings: 4,
+    difficulty: "medium",
+    image: "🥒",
+    description: "Lebanese grey zucchini hollowed and stuffed with rice and meat — cooked in tomato sauce or yogurt.",
+    ingredients: [
+      { item: "zucchini", amount: "8 small Lebanese/grey courgettes" },
+      { item: "ground beef", amount: "250g" },
+      { item: "rice", amount: "½ cup short-grain, rinsed" },
+      { item: "onion", amount: "1 small, grated" },
+      { item: "tomato paste", amount: "2 tbsp" },
+      { item: "canned tomatoes", amount: "400g" },
+      { item: "allspice", amount: "1 tsp" },
+      { item: "cinnamon", amount: "½ tsp" },
+      { item: "black pepper", amount: "¼ tsp" },
+      { item: "salt", amount: "to taste" },
+      { item: "butter", amount: "1 tbsp" },
+      { item: "water", amount: "1 cup" }
+    ],
+    steps: [
+      "Core each zucchini using a apple corer or kousa corer tool, leaving a thin shell. Reserve the cores.",
+      "Mix raw rice, ground beef, grated onion, allspice, cinnamon, pepper, and salt together.",
+      "Fill each zucchini ¾ full with the raw stuffing — rice expands while cooking.",
+      "In a large pot, mix tomatoes, tomato paste, butter, water, and salt. Bring to a boil.",
+      "Add stuffed zucchini to the pot. Lay them in a single layer if possible.",
+      "Cover and simmer on medium-low for 45-50 min until rice is cooked through.",
+      "Rest 10 min before serving. Serve with plain yogurt on the side."
+    ],
+    tags: ["zucchini", "stuffed", "rice", "meat", "slow-cooked"]
+  },
+  {
+    id: 34,
+    name: "Castaletta",
+    nameAr: "كاستاليتا",
+    category: "main",
+    time: 20,
+    servings: 4,
+    difficulty: "easy",
+    image: "🥩",
+    description: "Lebanese grilled lamb chops — marinated simply with garlic, lemon, and allspice, then seared over high heat.",
+    ingredients: [
+      { item: "lamb chops", amount: "8 (rib or loin chops)" },
+      { item: "garlic", amount: "4 cloves, crushed" },
+      { item: "lemon juice", amount: "3 tbsp" },
+      { item: "olive oil", amount: "2 tbsp" },
+      { item: "allspice", amount: "1 tsp" },
+      { item: "cumin", amount: "½ tsp" },
+      { item: "black pepper", amount: "½ tsp" },
+      { item: "salt", amount: "1 tsp" },
+      { item: "fresh thyme", amount: "4 sprigs (optional)" }
+    ],
+    steps: [
+      "Mix garlic, lemon juice, olive oil, allspice, cumin, pepper, and salt into a marinade.",
+      "Coat lamb chops thoroughly. Marinate at least 30 min at room temperature, or overnight in the fridge.",
+      "Heat grill or cast iron pan until very hot — almost smoking.",
+      "Sear chops 2-3 min per side for medium-rare, 3-4 min for medium. Do not crowd the pan.",
+      "Rest 5 min before serving. Serve with toum (garlic sauce), fries, or tabbouleh."
+    ],
+    tags: ["lamb", "grilled", "BBQ", "quick", "meat"]
+  },
+  {
+    id: 35,
+    name: "Beef Stroganoff",
+    nameAr: "ستروغانوف",
+    category: "main",
+    time: 40,
+    servings: 4,
+    difficulty: "easy",
+    image: "🍄",
+    description: "Tender beef strips in a rich mushroom and cream sauce — a beloved classic in Lebanese home cooking.",
+    ingredients: [
+      { item: "beef sirloin", amount: "600g, sliced into thin strips" },
+      { item: "mushrooms", amount: "300g, sliced" },
+      { item: "onion", amount: "1 large, sliced" },
+      { item: "garlic", amount: "2 cloves, minced" },
+      { item: "heavy cream", amount: "200ml" },
+      { item: "beef broth", amount: "150ml" },
+      { item: "butter", amount: "3 tbsp" },
+      { item: "Dijon mustard", amount: "1 tsp" },
+      { item: "Worcestershire sauce", amount: "1 tsp" },
+      { item: "sour cream", amount: "2 tbsp (optional)" },
+      { item: "flour", amount: "1 tbsp" },
+      { item: "salt", amount: "to taste" },
+      { item: "black pepper", amount: "to taste" },
+      { item: "parsley", amount: "chopped, to serve" }
+    ],
+    steps: [
+      "Season beef strips with salt and pepper. Sear in hot butter in batches (don't crowd!) 1-2 min per side. Remove and set aside.",
+      "In the same pan, sauté onion until softened. Add garlic and mushrooms, cook until mushrooms are golden.",
+      "Sprinkle flour over the vegetables, stir 1 min.",
+      "Add beef broth and scrape up any brown bits. Stir in cream, mustard, and Worcestershire sauce.",
+      "Simmer 5 min until sauce thickens. Return beef to the pan, heat through 2 min.",
+      "Stir in sour cream off the heat. Taste and adjust seasoning.",
+      "Serve over egg noodles, pasta, or rice. Garnish with parsley."
+    ],
+    tags: ["beef", "creamy", "mushrooms", "comfort food", "pasta"]
+  },
+  {
+    id: 36,
+    name: "Steak with Mashed Potatoes",
+    nameAr: "ستيك و بطاطا بوريه",
+    category: "main",
+    time: 35,
+    servings: 2,
+    difficulty: "medium",
+    image: "🥩",
+    description: "Pan-seared steak with buttery, ultra-smooth mashed potatoes and a quick pan sauce.",
+    ingredients: [
+      { item: "ribeye or sirloin steak", amount: "2 steaks (250g each)" },
+      { item: "potatoes", amount: "700g, peeled and cubed" },
+      { item: "butter", amount: "100g (50g for mash, 50g for steak)" },
+      { item: "heavy cream", amount: "100ml, warm" },
+      { item: "garlic", amount: "3 cloves" },
+      { item: "fresh thyme", amount: "4 sprigs" },
+      { item: "rosemary", amount: "1 sprig (optional)" },
+      { item: "olive oil", amount: "1 tbsp" },
+      { item: "salt", amount: "to taste" },
+      { item: "black pepper", amount: "to taste" }
+    ],
+    steps: [
+      "Mashed potatoes: boil potatoes in salted water until very tender. Drain and steam dry 2 min.",
+      "Rice or mash potatoes. Beat in 50g warm butter and warm cream until silky smooth. Season generously. Keep warm.",
+      "Take steaks out of fridge 30 min before cooking. Pat bone dry. Season heavily with salt and pepper.",
+      "Heat olive oil in cast iron until nearly smoking. Sear steaks 2-3 min per side for medium-rare.",
+      "Add 50g butter, garlic cloves, and thyme to the pan. Baste steaks continuously 1 min with the foaming butter.",
+      "Rest steaks on a board 5 min — this is non-negotiable. Pour pan juices over as a sauce.",
+      "Serve steak sliced against the grain alongside the mashed potatoes."
+    ],
+    tags: ["beef", "steak", "potato", "dinner", "comfort food"]
+  }
 ];
 
 const ALL_INGREDIENTS = [...new Set(
