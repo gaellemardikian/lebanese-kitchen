@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0" />
+  <meta name="theme-color" content="#1a472a" />
+  <meta name="description" content="Lebanese Recipes — filter by ingredients you have" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="Lebanese Kitchen" />
+  <title>Lebanese Kitchen</title>
+  <link rel="manifest" href="manifest.json" />
+  <link rel="stylesheet" href="styles.css" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet" />
+</head>
+<body>
+  <!-- HEADER -->
+  <header class="header">
+    <div class="header-content">
+      <div class="logo">
+        <span class="logo-icon">🌿</span>
+        <div>
+          <h1>Lebanese Kitchen</h1>
+          <p class="subtitle">مطبخ لبناني</p>
+        </div>
+      </div>
+      <button class="filter-toggle" id="filterToggle" aria-label="Open ingredient filter">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <line x1="4" y1="6" x2="20" y2="6"/><line x1="8" y1="12" x2="16" y2="12"/><line x1="11" y1="18" x2="13" y2="18"/>
+        </svg>
+        Filter
+        <span class="filter-badge" id="filterBadge" hidden>0</span>
+      </button>
+    </div>
+  </header>
+
+  <!-- FILTER PANEL -->
+  <div class="filter-overlay" id="filterOverlay"></div>
+  <aside class="filter-panel" id="filterPanel" aria-hidden="true">
+    <div class="filter-header">
+      <h2>What do you have?</h2>
+      <button class="close-btn" id="closeFilter" aria-label="Close filter">✕</button>
+    </div>
+    <p class="filter-hint">Select ingredients you have — recipes will update automatically.</p>
+
+    <div class="filter-mode">
+      <label class="mode-label">Show recipes where I have:</label>
+      <div class="mode-buttons">
+        <button class="mode-btn active" data-mode="any">Any ingredients</button>
+        <button class="mode-btn" data-mode="all">All ingredients</button>
+      </div>
+    </div>
+
+    <div class="ingredient-search-wrap">
+      <input type="search" id="ingredientSearch" placeholder="Search ingredients…" class="ingredient-search" autocomplete="off" />
+    </div>
+
+    <div class="ingredient-list" id="ingredientList"></div>
+
+    <div class="filter-footer">
+      <button class="clear-btn" id="clearIngredients">Clear all</button>
+      <button class="apply-btn" id="applyFilter">Show recipes</button>
+    </div>
+  </aside>
+
+  <!-- MAIN CONTENT -->
+  <main class="main">
+    <!-- Category nav -->
+    <nav class="category-nav" aria-label="Recipe categories">
+      <div class="category-scroll" id="categoryNav"></div>
+    </nav>
+
+    <!-- Search bar -->
+    <div class="search-bar-wrap">
+      <svg class="search-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+      </svg>
+      <input type="search" id="recipeSearch" placeholder="Search recipes…" class="recipe-search" autocomplete="off" />
+    </div>
+
+    <!-- Stats bar -->
+    <div class="stats-bar" id="statsBar">
+      <span id="recipeCount">30 recipes</span>
+      <span id="activeFiltersInfo"></span>
+    </div>
+
+    <!-- Recipe grid -->
+    <div class="recipe-grid" id="recipeGrid"></div>
+
+    <!-- Empty state -->
+    <div class="empty-state" id="emptyState" hidden>
+      <span class="empty-icon">🔍</span>
+      <h3>No recipes found</h3>
+      <p>Try adjusting your filters or search term.</p>
+      <button class="clear-btn" id="clearAll">Clear filters</button>
+    </div>
+  </main>
+
+  <!-- RECIPE MODAL -->
+  <div class="modal-overlay" id="modalOverlay" aria-hidden="true">
+    <div class="modal" id="modal" role="dialog" aria-modal="true">
+      <button class="modal-close" id="modalClose" aria-label="Close recipe">✕</button>
+      <div class="modal-content" id="modalContent"></div>
+    </div>
+  </div>
+
+  <script src="recipes-data.js"></script>
+  <script src="app.js"></script>
+  <script>
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('sw.js').catch(() => {});
+      });
+    }
+  </script>
+</body>
+</html>
