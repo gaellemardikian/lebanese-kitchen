@@ -3,11 +3,71 @@
 // ===== STATE =====
 const state = {
   selectedIngredients: new Set(),
-  filterMode: 'any',       // 'any' | 'all'
+  filterMode: 'any',
   activeCategory: 'all',
   searchQuery: '',
   openRecipeId: null,
 };
+
+// ===== IMAGE CACHE =====
+// Stores Wikipedia photo URLs keyed by recipe id. null = no photo available.
+const imgCache = new Map();
+
+async function fetchWikiPhoto(recipeId) {
+  if (imgCache.has(recipeId)) return imgCache.get(recipeId);
+  const title = WIKI_TITLES[recipeId];
+  if (!title) { imgCache.set(recipeId, null); return null; }
+  try {
+    const url = `https://en.wikipedia.org/w/api.php?action=query&titles=${encodeURIComponent(title)}&prop=pageimages&format=json&pithumbsize=600&origin=*`;
+    const res = await fetch(url);
+    const data = await res.json();
+    const pages = Object.values(data.query.pages);
+    const src = pages[0]?.thumbnail?.source ?? null;
+    imgCache.set(recipeId, src);
+    return src;
+  } catch {
+    imgCache.set(recipeId, null);
+    return null;
+  }
+}
+
+function applyPhotoToCard(card, src) {
+  const wrap = card.querySelector('.card-img-wrap');
+  if (!wrap) return;
+  const fallback = wrap.querySelector('.card-emoji-text');
+  if (src) {
+    const img = document.createElement('img');
+    img.className = 'card-photo';
+    img.alt = '';
+    img.src = src;
+    img.onload = () => { if (fallback) fallback.style.display = 'none'; wrap.prepend(img); };
+  }
+}
+
+function applyPhotoToModal(src) {
+  const hero = document.querySelector('.modal-hero');
+  if (!hero || !src) return;
+  const fallback = hero.querySelector('.modal-emoji');
+  const img = document.createElement('img');
+  img.className = 'modal-photo';
+  img.alt = '';
+  img.src = src;
+  img.onload = () => { if (fallback) fallback.style.display = 'none'; hero.prepend(img); };
+}
+
+// Observe cards entering viewport then load their photo
+let observer;
+function setupObserver() {
+  observer = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      if (!entry.isIntersecting) return;
+      const card = entry.target;
+      const id = +card.dataset.id;
+      observer.unobserve(card);
+      fetchWikiPhoto(id).then(src => { if (src) applyPhotoToCard(card, src); });
+    });
+  }, { rootMargin: '200px' });
+}
 
 // ===== DOM REFS =====
 const $ = id => document.getElementById(id);
@@ -36,6 +96,7 @@ const els = {
 
 // ===== INIT =====
 function init() {
+  setupObserver();
   renderCategories();
   renderIngredientList();
   renderRecipes();
@@ -76,12 +137,10 @@ function renderIngredientList(filter = '') {
 function getFilteredRecipes() {
   let recipes = [...RECIPES];
 
-  // Category filter
   if (state.activeCategory !== 'all') {
     recipes = recipes.filter(r => r.category === state.activeCategory);
   }
 
-  // Search filter
   if (state.searchQuery) {
     const q = state.searchQuery.toLowerCase();
     recipes = recipes.filter(r =>
@@ -93,7 +152,6 @@ function getFilteredRecipes() {
     );
   }
 
-  // Ingredient filter
   if (state.selectedIngredients.size > 0) {
     const sel = state.selectedIngredients;
     if (state.filterMode === 'all') {
@@ -107,13 +165,10 @@ function getFilteredRecipes() {
     }
   }
 
-  // Sort: full matches first when filtering
   if (state.selectedIngredients.size > 0) {
     recipes.sort((a, b) => {
-      const matchA = a.ingredients.filter(i => state.selectedIngredients.has(i.item)).length;
-      const matchB = b.ingredients.filter(i => state.selectedIngredients.has(i.item)).length;
-      const pctA = matchA / a.ingredients.length;
-      const pctB = matchB / b.ingredients.length;
+      const pctA = a.ingredients.filter(i => state.selectedIngredients.has(i.item)).length / a.ingredients.length;
+      const pctB = b.ingredients.filter(i => state.selectedIngredients.has(i.item)).length / b.ingredients.length;
       return pctB - pctA;
     });
   }
@@ -133,15 +188,14 @@ function getMatchInfo(recipe) {
 function renderRecipes() {
   const recipes = getFilteredRecipes();
 
-  // Update stats
   els.recipeCount.textContent = `${recipes.length} recipe${recipes.length !== 1 ? 's' : ''}`;
 
-  // Active filters info
   if (state.selectedIngredients.size > 0) {
     const tags = [...state.selectedIngredients].slice(0, 3).map(i =>
       `<span class="active-tag">${i}</span>`
     ).join('');
-    const extra = state.selectedIngredients.size > 3 ? `<span class="active-tag">+${state.selectedIngredients.size - 3}</span>` : '';
+    const extra = state.selectedIngredients.size > 3
+      ? `<span class="active-tag">+${state.selectedIngredients.size - 3}</span>` : '';
     els.activeFiltersInfo.innerHTML = tags + extra;
   } else {
     els.activeFiltersInfo.innerHTML = '';
@@ -156,10 +210,11 @@ function renderRecipes() {
   els.emptyState.hidden = true;
   els.recipeGrid.innerHTML = recipes.map(r => renderCard(r)).join('');
 
-  // Bind card clicks
   els.recipeGrid.querySelectorAll('.recipe-card').forEach(card => {
     card.addEventListener('click', () => openRecipe(+card.dataset.id));
     card.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') openRecipe(+card.dataset.id); });
+    // Kick off lazy image load for this card
+    if (observer) observer.observe(card);
   });
 }
 
@@ -176,8 +231,8 @@ function renderCard(recipe) {
 
   return `
     <article class="recipe-card" data-id="${recipe.id}" role="button" tabindex="0" aria-label="${recipe.name}">
-      <div class="card-emoji">
-        ${recipe.image}
+      <div class="card-img-wrap">
+        <span class="card-emoji-text">${recipe.image}</span>
         <span class="card-category-badge">${categoryLabel}</span>
         ${matchBadge}
       </div>
@@ -236,7 +291,9 @@ function openRecipe(id) {
   const tagsHtml = recipe.tags.map(t => `<span class="tag">${t}</span>`).join('');
 
   els.modalContent.innerHTML = `
-    <div class="modal-hero">${recipe.image}</div>
+    <div class="modal-hero">
+      <span class="modal-emoji">${recipe.image}</span>
+    </div>
     <div style="padding:0">
       <h2 class="modal-title">${recipe.name}</h2>
       <p class="modal-title-ar">${recipe.nameAr}</p>
@@ -260,6 +317,9 @@ function openRecipe(id) {
   els.modalOverlay.classList.add('open');
   els.modalOverlay.setAttribute('aria-hidden', 'false');
   document.body.style.overflow = 'hidden';
+
+  // Load real photo into modal hero
+  fetchWikiPhoto(id).then(src => { if (src) applyPhotoToModal(src); });
 }
 
 function closeModal() {
@@ -293,22 +353,18 @@ function updateFilterBadge() {
 
 // ===== EVENT BINDING =====
 function bindEvents() {
-  // Filter panel open/close
   els.filterToggle.addEventListener('click', openFilterPanel);
   els.closeFilter.addEventListener('click', closeFilterPanel);
   els.filterOverlay.addEventListener('click', closeFilterPanel);
   els.applyFilter.addEventListener('click', () => { closeFilterPanel(); renderRecipes(); });
 
-  // Ingredient search
   els.ingredientSearch.addEventListener('input', e => renderIngredientList(e.target.value));
 
-  // Ingredient checkboxes (delegated)
   els.ingredientList.addEventListener('click', handleIngredientClick);
   els.ingredientList.addEventListener('keydown', e => {
     if (e.key === 'Enter' || e.key === ' ') handleIngredientClick(e);
   });
 
-  // Clear ingredients
   els.clearIngredients.addEventListener('click', () => {
     state.selectedIngredients.clear();
     renderIngredientList(els.ingredientSearch.value);
@@ -316,7 +372,6 @@ function bindEvents() {
     renderRecipes();
   });
 
-  // Mode buttons
   document.querySelectorAll('.mode-btn').forEach(btn => {
     btn.addEventListener('click', () => {
       document.querySelectorAll('.mode-btn').forEach(b => b.classList.remove('active'));
@@ -325,7 +380,6 @@ function bindEvents() {
     });
   });
 
-  // Category nav (delegated)
   els.categoryNav.addEventListener('click', e => {
     const btn = e.target.closest('.cat-btn');
     if (!btn) return;
@@ -334,7 +388,6 @@ function bindEvents() {
     renderRecipes();
   });
 
-  // Recipe search
   let searchTimer;
   els.recipeSearch.addEventListener('input', e => {
     clearTimeout(searchTimer);
@@ -344,11 +397,9 @@ function bindEvents() {
     }, 200);
   });
 
-  // Modal close
   els.modalClose.addEventListener('click', closeModal);
   els.modalOverlay.addEventListener('click', e => { if (e.target === els.modalOverlay) closeModal(); });
 
-  // Clear all
   if (els.clearAll) {
     els.clearAll.addEventListener('click', () => {
       state.selectedIngredients.clear();
@@ -361,7 +412,6 @@ function bindEvents() {
     });
   }
 
-  // Keyboard: Esc closes modals
   document.addEventListener('keydown', e => {
     if (e.key === 'Escape') {
       if (state.openRecipeId) closeModal();
@@ -382,7 +432,6 @@ function handleIngredientClick(e) {
   item.classList.toggle('checked', state.selectedIngredients.has(ing));
   item.setAttribute('aria-checked', state.selectedIngredients.has(ing));
   updateFilterBadge();
-  // Live update recipes while panel is open
   renderRecipes();
 }
 

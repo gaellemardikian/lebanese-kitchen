@@ -472,15 +472,31 @@ body {
 
 .recipe-card:active { transform: translateY(-1px); }
 
-.card-emoji {
-  height: 120px;
+.card-img-wrap {
+  height: 160px;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 4rem;
   background: linear-gradient(135deg, #f0f7f0, #e8f5e9);
   flex-shrink: 0;
   position: relative;
+  overflow: hidden;
+}
+
+.card-photo {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: opacity 0.4s ease;
+}
+
+.card-emoji-text {
+  font-size: 4rem;
+  line-height: 1;
+  z-index: 1;
+  transition: opacity 0.3s ease;
 }
 
 .card-category-badge {
@@ -666,14 +682,30 @@ body {
 .modal-content { padding: 0 1.5rem 2rem; }
 
 .modal-hero {
-  height: 160px;
+  height: 240px;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 5rem;
   background: linear-gradient(135deg, #e8f5e9, #c8e6c9);
   margin: 0 -1.5rem;
   margin-top: -1.5rem;
+  position: relative;
+  overflow: hidden;
+}
+
+.modal-photo {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: opacity 0.4s ease;
+}
+
+.modal-emoji {
+  font-size: 5rem;
+  line-height: 1;
+  z-index: 1;
 }
 
 .modal-title {
