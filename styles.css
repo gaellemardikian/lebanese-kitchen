@@ -753,6 +753,51 @@ body {
   border-left: 3px solid var(--green-light);
 }
 
+.serving-adjuster {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin: 0.75rem 0 1rem;
+  padding: 0.6rem 1rem;
+  background: var(--gray-50);
+  border: 1.5px solid var(--gray-200);
+  border-radius: var(--radius);
+  width: fit-content;
+}
+
+.adj-btn {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  border: 1.5px solid var(--green-dark);
+  background: white;
+  color: var(--green-dark);
+  font-size: 1.2rem;
+  font-weight: 700;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+  transition: all var(--transition);
+  flex-shrink: 0;
+}
+
+.adj-btn:hover {
+  background: var(--green-dark);
+  color: white;
+}
+
+.adj-btn:active { transform: scale(0.92); }
+
+.adj-label {
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--green-dark);
+  min-width: 80px;
+  text-align: center;
+}
+
 .modal-section-title {
   font-family: var(--font-serif);
   font-size: 1.1rem;

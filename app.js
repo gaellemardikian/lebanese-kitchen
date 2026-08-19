@@ -1,6 +1,52 @@
 'use strict';
 
+// ===== AMOUNT SCALING =====
+const UNICODE_FRACS = {
+  '½':1/2,'¼':1/4,'¾':3/4,'⅓':1/3,'⅔':2/3,
+  '⅛':1/8,'⅜':3/8,'⅝':5/8,'⅞':7/8,
+};
+
+function toDecimal(s) {
+  s = s.trim();
+  const mixed = s.match(/^(\d+)([½¼¾⅓⅔⅛⅜⅝⅞])$/);
+  if (mixed) return +mixed[1] + UNICODE_FRACS[mixed[2]];
+  if (UNICODE_FRACS[s]) return UNICODE_FRACS[s];
+  const n = parseFloat(s);
+  return isNaN(n) ? null : n;
+}
+
+function toNiceStr(v) {
+  const whole = Math.floor(v);
+  const frac  = v - whole;
+  const FMAP  = [[1/8,'⅛'],[1/4,'¼'],[1/3,'⅓'],[3/8,'⅜'],[1/2,'½'],[5/8,'⅝'],[2/3,'⅔'],[3/4,'¾'],[7/8,'⅞']];
+  for (const [f, sym] of FMAP) {
+    if (Math.abs(frac - f) < 0.04) return whole > 0 ? `${whole}${sym}` : sym;
+  }
+  if (v === Math.round(v)) return String(Math.round(v));
+  return v % 1 === 0 ? String(v) : v.toFixed(1).replace(/\.0$/, '');
+}
+
+function scaleAmount(str, factor) {
+  if (factor === 1 || !str) return str;
+  // Range: "4-5 stalks"
+  const range = str.match(/^([½¼¾⅓⅔⅛⅜⅝⅞\d.]+)-([½¼¾⅓⅔⅛⅜⅝⅞\d.]+)(.*)/);
+  if (range) {
+    const v1 = toDecimal(range[1]), v2 = toDecimal(range[2]);
+    if (v1 !== null && v2 !== null)
+      return `${toNiceStr(v1 * factor)}-${toNiceStr(v2 * factor)}${range[3]}`;
+  }
+  // Single leading number/fraction
+  const m = str.match(/^(\d*[½¼¾⅓⅔⅛⅜⅝⅞]|\d+\.?\d*)(.*)/);
+  if (!m) return str; // "to taste", "for garnish", etc.
+  const v = toDecimal(m[1]);
+  if (v === null) return str;
+  return toNiceStr(v * factor) + m[2];
+}
+
 // ===== STATE =====
+let modalServings = 0;
+let modalRecipe   = null;
+
 const state = {
   selectedIngredients: new Set(),
   filterMode: 'any',
@@ -252,25 +298,38 @@ function renderCard(recipe) {
 }
 
 // ===== MODAL =====
-function openRecipe(id) {
-  const recipe = RECIPES.find(r => r.id === id);
-  if (!recipe) return;
-  state.openRecipeId = id;
-
-  const match = getMatchInfo(recipe);
-
-  const ingredientsHtml = recipe.ingredients.map(i => {
+function buildIngredientsHtml(recipe, servings) {
+  const factor = servings / recipe.servings;
+  return recipe.ingredients.map(i => {
     const have = state.selectedIngredients.has(i.item);
+    const scaledAmount = scaleAmount(i.amount, factor);
     return `
       <div class="ingredient-row ${have ? 'have' : ''}">
         <span class="ingredient-row-dot"></span>
         <span>
           <span class="ingredient-row-name">${i.item}</span>
-          <span class="ingredient-row-amount">${i.amount}</span>
+          <span class="ingredient-row-amount">${scaledAmount}</span>
         </span>
       </div>
     `;
   }).join('');
+}
+
+function refreshIngredients() {
+  const grid = document.getElementById('modal-ingredients');
+  if (grid && modalRecipe) grid.innerHTML = buildIngredientsHtml(modalRecipe, modalServings);
+  const numEl = document.getElementById('servingsNum');
+  if (numEl) numEl.textContent = modalServings;
+}
+
+function openRecipe(id) {
+  const recipe = RECIPES.find(r => r.id === id);
+  if (!recipe) return;
+  state.openRecipeId = id;
+  modalRecipe   = recipe;
+  modalServings = recipe.servings;
+
+  const match = getMatchInfo(recipe);
 
   const stepsHtml = recipe.steps.map((step, i) => `
     <li class="step-item">
@@ -299,26 +358,36 @@ function openRecipe(id) {
       <p class="modal-title-ar">${recipe.nameAr}</p>
       <div class="modal-meta">
         <span class="modal-meta-item"><span class="modal-meta-icon">⏱</span> ${recipe.time} min</span>
-        <span class="modal-meta-item"><span class="modal-meta-icon">👤</span> Serves ${recipe.servings}</span>
         <span class="modal-meta-item"><span class="difficulty-dot ${recipe.difficulty}" style="width:10px;height:10px"></span> ${recipe.difficulty}</span>
+      </div>
+      <div class="serving-adjuster">
+        <button class="adj-btn" id="adjDown" aria-label="Fewer servings">−</button>
+        <span class="adj-label">Serves <span id="servingsNum">${recipe.servings}</span></span>
+        <button class="adj-btn" id="adjUp" aria-label="More servings">+</button>
       </div>
       ${matchNote}
       <p class="modal-desc">${recipe.description}</p>
       <div class="card-tags" style="margin-bottom:1.25rem">${tagsHtml}</div>
 
       <h3 class="modal-section-title">🧺 Ingredients</h3>
-      <div class="ingredients-grid">${ingredientsHtml}</div>
+      <div class="ingredients-grid" id="modal-ingredients">${buildIngredientsHtml(recipe, modalServings)}</div>
 
       <h3 class="modal-section-title">📋 Steps</h3>
       <ol class="steps-list">${stepsHtml}</ol>
     </div>
   `;
 
+  document.getElementById('adjDown').addEventListener('click', () => {
+    if (modalServings > 1) { modalServings--; refreshIngredients(); }
+  });
+  document.getElementById('adjUp').addEventListener('click', () => {
+    if (modalServings < 50) { modalServings++; refreshIngredients(); }
+  });
+
   els.modalOverlay.classList.add('open');
   els.modalOverlay.setAttribute('aria-hidden', 'false');
   document.body.style.overflow = 'hidden';
 
-  // Load real photo into modal hero
   fetchWikiPhoto(id).then(src => { if (src) applyPhotoToModal(src); });
 }
 
