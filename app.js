@@ -47,8 +47,17 @@ function scaleAmount(str, factor) {
 let modalServings = 0;
 let modalRecipe   = null;
 
+function loadPantry() {
+  try { return new Set(JSON.parse(localStorage.getItem('lk-pantry') || '[]')); }
+  catch { return new Set(); }
+}
+function savePantry() {
+  localStorage.setItem('lk-pantry', JSON.stringify([...state.pantry]));
+}
+
 const state = {
   selectedIngredients: new Set(),
+  pantry: loadPantry(),
   filterMode: 'any',
   activeCategory: 'all',
   searchQuery: '',
@@ -140,10 +149,48 @@ const els = {
   clearAll: $('clearAll'),
 };
 
+// ===== PANTRY =====
+function renderPantrySection() {
+  const chips = document.getElementById('pantryChips');
+  const empty = document.getElementById('pantryEmpty');
+  if (!chips || !empty) return;
+
+  if (state.pantry.size === 0) {
+    chips.innerHTML = '';
+    empty.hidden = false;
+    return;
+  }
+  empty.hidden = true;
+  chips.innerHTML = [...state.pantry].sort().map(ing => `
+    <span class="pantry-chip">
+      ${ing}
+      <button class="pantry-chip-remove" data-ing="${ing}" aria-label="Remove ${ing} from pantry">×</button>
+    </span>
+  `).join('');
+}
+
+function addToPantry(ing) {
+  state.pantry.add(ing);
+  state.selectedIngredients.delete(ing); // can't be both
+  savePantry();
+  renderPantrySection();
+  renderIngredientList(document.getElementById('ingredientSearch').value);
+  renderRecipes();
+}
+
+function removeFromPantry(ing) {
+  state.pantry.delete(ing);
+  savePantry();
+  renderPantrySection();
+  renderIngredientList(document.getElementById('ingredientSearch').value);
+  renderRecipes();
+}
+
 // ===== INIT =====
 function init() {
   setupObserver();
   renderCategories();
+  renderPantrySection();
   renderIngredientList();
   renderRecipes();
   bindEvents();
@@ -159,10 +206,13 @@ function renderCategories() {
 // ===== INGREDIENT LIST =====
 function renderIngredientList(filter = '') {
   const lc = filter.toLowerCase();
-  const visible = ALL_INGREDIENTS.filter(i => !lc || i.includes(lc));
+  // Hide pantry items — they're always available
+  const visible = ALL_INGREDIENTS.filter(i =>
+    !state.pantry.has(i) && (!lc || i.includes(lc))
+  );
 
   if (!visible.length) {
-    els.ingredientList.innerHTML = `<p style="color:var(--gray-400);font-size:.85rem;padding:.5rem 0">No ingredients match.</p>`;
+    els.ingredientList.innerHTML = `<p style="color:var(--gray-400);font-size:.85rem;padding:.5rem 0">${state.pantry.size > 0 && !lc ? 'All matching ingredients are in your pantry.' : 'No ingredients match.'}</p>`;
     return;
   }
 
@@ -174,6 +224,7 @@ function renderIngredientList(filter = '') {
         <span class="ingredient-checkbox"></span>
         <span class="ingredient-name">${ing}</span>
         <span class="ingredient-count">${recipeCount}</span>
+        <button class="pantry-add-btn" data-ing="${ing}" title="Add to pantry (always available)" tabindex="-1">🏠</button>
       </div>
     `;
   }).join('');
@@ -211,10 +262,11 @@ function getFilteredRecipes() {
     }
   }
 
-  if (state.selectedIngredients.size > 0) {
+  if (state.selectedIngredients.size > 0 || state.pantry.size > 0) {
+    const allHave = new Set([...state.selectedIngredients, ...state.pantry]);
     recipes.sort((a, b) => {
-      const pctA = a.ingredients.filter(i => state.selectedIngredients.has(i.item)).length / a.ingredients.length;
-      const pctB = b.ingredients.filter(i => state.selectedIngredients.has(i.item)).length / b.ingredients.length;
+      const pctA = a.ingredients.filter(i => allHave.has(i.item)).length / a.ingredients.length;
+      const pctB = b.ingredients.filter(i => allHave.has(i.item)).length / b.ingredients.length;
       return pctB - pctA;
     });
   }
@@ -223,10 +275,12 @@ function getFilteredRecipes() {
 }
 
 function getMatchInfo(recipe) {
-  if (state.selectedIngredients.size === 0) return null;
-  const have = recipe.ingredients.filter(i => state.selectedIngredients.has(i.item)).length;
+  const hasFilter = state.selectedIngredients.size > 0 || state.pantry.size > 0;
+  if (!hasFilter) return null;
+  const allHave = new Set([...state.selectedIngredients, ...state.pantry]);
+  const have  = recipe.ingredients.filter(i => allHave.has(i.item)).length;
   const total = recipe.ingredients.length;
-  const pct = have / total;
+  const pct   = have / total;
   return { have, total, full: pct === 1, pct };
 }
 
@@ -299,9 +353,10 @@ function renderCard(recipe) {
 
 // ===== MODAL =====
 function buildIngredientsHtml(recipe, servings) {
-  const factor = servings / recipe.servings;
+  const factor  = servings / recipe.servings;
+  const allHave = new Set([...state.selectedIngredients, ...state.pantry]);
   return recipe.ingredients.map(i => {
-    const have = state.selectedIngredients.has(i.item);
+    const have = allHave.has(i.item);
     const scaledAmount = scaleAmount(i.amount, factor);
     return `
       <div class="ingredient-row ${have ? 'have' : ''}">
@@ -429,9 +484,20 @@ function bindEvents() {
 
   els.ingredientSearch.addEventListener('input', e => renderIngredientList(e.target.value));
 
-  els.ingredientList.addEventListener('click', handleIngredientClick);
+  els.ingredientList.addEventListener('click', e => {
+    // Pantry button takes priority
+    const pantryBtn = e.target.closest('.pantry-add-btn');
+    if (pantryBtn) { e.stopPropagation(); addToPantry(pantryBtn.dataset.ing); return; }
+    handleIngredientClick(e);
+  });
   els.ingredientList.addEventListener('keydown', e => {
     if (e.key === 'Enter' || e.key === ' ') handleIngredientClick(e);
+  });
+
+  // Pantry chip remove buttons
+  document.getElementById('pantryChips').addEventListener('click', e => {
+    const btn = e.target.closest('.pantry-chip-remove');
+    if (btn) removeFromPantry(btn.dataset.ing);
   });
 
   els.clearIngredients.addEventListener('click', () => {
