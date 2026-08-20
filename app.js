@@ -63,8 +63,6 @@ function parseForSum(str) {
 }
 
 function sumAmounts(entries) {
-  // entries: [{amount, recipeName}]
-  // Try to sum if all parse to the same unit
   const parsed = entries.map(e => ({ ...e, p: parseForSum(e.amount) }));
   const allParsed = parsed.every(e => e.p !== null);
   if (allParsed) {
@@ -75,7 +73,6 @@ function sumAmounts(entries) {
       return toNiceStr(total) + (unit ? ' ' + unit : '');
     }
   }
-  // Can't sum — join individual amounts
   return entries.map(e => e.amount).join(' + ');
 }
 
@@ -88,21 +85,30 @@ function savePantry() {
   localStorage.setItem('lk-pantry', JSON.stringify([...state.pantry]));
 }
 
+// ===== SAVED RECIPES PERSISTENCE =====
+function loadSavedRecipes() {
+  try { return new Set(JSON.parse(localStorage.getItem('lk-saved') || '[]').map(Number)); }
+  catch { return new Set(); }
+}
+function saveSavedRecipes() {
+  localStorage.setItem('lk-saved', JSON.stringify([...state.savedRecipes]));
+}
+
 // ===== STATE =====
 let modalServings = 0;
 let modalRecipe   = null;
 let currentView   = 'recipes';
 
-// mealPlan: Map<recipeId, servings>
-const mealPlan = new Map();
+const mealPlan = new Map(); // recipeId → servings
 
 const state = {
   selectedIngredients: new Set(),
-  pantry: loadPantry(),
-  filterMode: 'any',
-  activeCategory: 'all',
-  searchQuery: '',
-  openRecipeId: null,
+  pantry:              loadPantry(),
+  savedRecipes:        loadSavedRecipes(),
+  filterMode:          'any',
+  activeCategory:      'all',
+  searchQuery:         '',
+  openRecipeId:        null,
 };
 
 // ===== IMAGE CACHE =====
@@ -172,34 +178,48 @@ const els = {
   ingredientSearch:    $('ingredientSearch'),
   clearIngredients:    $('clearIngredients'),
   applyFilter:         $('applyFilter'),
-  categoryNav:         $('categoryNav'),
+  // My Recipes view
+  recipesView:         $('recipesView'),
   recipeSearch:        $('recipeSearch'),
   recipeGrid:          $('recipeGrid'),
-  emptyState:          $('emptyState'),
+  statsBar:            $('statsBar'),
   recipeCount:         $('recipeCount'),
   activeFiltersInfo:   $('activeFiltersInfo'),
-  modalOverlay:        $('modalOverlay'),
-  modalContent:        $('modalContent'),
-  modalClose:          $('modalClose'),
-  clearAll:            $('clearAll'),
-  recipesView:         $('recipesView'),
+  emptyMyRecipes:      $('emptyMyRecipes'),
+  emptyState:          $('emptyState'),
+  goDiscoverBtn:       $('goDiscoverBtn'),
+  savedCountBadge:     $('savedCountBadge'),
+  // Discover view
+  discoverView:        $('discoverView'),
+  discoverCategoryNav: $('discoverCategoryNav'),
+  discoverSearch:      $('discoverSearch'),
+  discoverGrid:        $('discoverGrid'),
+  discoverCount:       $('discoverCount'),
+  discoverEmpty:       $('discoverEmpty'),
+  // Pantry view
   pantryView:          $('pantryView'),
-  shoppingView:        $('shoppingView'),
   pantryPageList:      $('pantryPageList'),
   pantrySearch:        $('pantrySearch'),
   pantryCountBadge:    $('pantryCountBadge'),
+  // Shopping view
+  shoppingView:        $('shoppingView'),
   shoppingCountBadge:  $('shoppingCountBadge'),
   shoppingEmpty:       $('shoppingEmpty'),
   shoppingContent:     $('shoppingContent'),
   shoppingRecipes:     $('shoppingRecipes'),
   shoppingIngredients: $('shoppingIngredients'),
   shoppingPantryNote:  $('shoppingPantryNote'),
+  // Modal
+  modalOverlay:        $('modalOverlay'),
+  modalContent:        $('modalContent'),
+  modalClose:          $('modalClose'),
 };
 
 // ===== VIEW SWITCHING =====
 function switchView(view) {
   currentView = view;
   els.recipesView.hidden  = view !== 'recipes';
+  els.discoverView.hidden = view !== 'discover';
   els.pantryView.hidden   = view !== 'pantry';
   els.shoppingView.hidden = view !== 'shopping';
 
@@ -207,24 +227,54 @@ function switchView(view) {
     btn.classList.toggle('active', btn.dataset.view === view);
   });
 
-  els.filterToggle.style.visibility = view === 'recipes' ? 'visible' : 'hidden';
+  // Filter toggle only makes sense on Discover
+  els.filterToggle.style.visibility = view === 'discover' ? 'visible' : 'hidden';
 
   if (view === 'pantry')   renderPantryPage();
   if (view === 'shopping') renderShoppingPage();
+  if (view === 'discover') renderDiscover();
+  if (view === 'recipes')  renderMyRecipes();
 }
 
-// ===== PANTRY BADGE =====
+// ===== BADGES =====
 function updatePantryBadge() {
   const n = state.pantry.size;
   els.pantryCountBadge.textContent = n;
   els.pantryCountBadge.hidden = n === 0;
 }
 
-// ===== SHOPPING BADGE =====
 function updateShoppingBadge() {
   const n = mealPlan.size;
   els.shoppingCountBadge.textContent = n;
   els.shoppingCountBadge.hidden = n === 0;
+}
+
+function updateSavedBadge() {
+  const n = state.savedRecipes.size;
+  els.savedCountBadge.textContent = n;
+  els.savedCountBadge.hidden = n === 0;
+}
+
+// ===== SAVE / UNSAVE =====
+function toggleSaved(recipeId) {
+  if (state.savedRecipes.has(recipeId)) {
+    state.savedRecipes.delete(recipeId);
+  } else {
+    state.savedRecipes.add(recipeId);
+  }
+  saveSavedRecipes();
+  updateSavedBadge();
+
+  // Update heart buttons wherever they're visible
+  const saved = state.savedRecipes.has(recipeId);
+  document.querySelectorAll(`.recipe-card[data-id="${recipeId}"] .heart-btn`).forEach(btn => {
+    btn.classList.toggle('saved', saved);
+    btn.title = saved ? 'Remove from My Recipes' : 'Save to My Recipes';
+    btn.textContent = saved ? '♥' : '♡';
+  });
+
+  // If viewing My Recipes, re-render so unsaved items disappear
+  if (currentView === 'recipes') renderMyRecipes();
 }
 
 // ===== MEAL PLAN =====
@@ -236,7 +286,6 @@ function toggleMealPlan(recipeId) {
     mealPlan.set(recipeId, recipe ? recipe.servings : 4);
   }
   updateShoppingBadge();
-  // Refresh card button state without re-rendering everything
   document.querySelectorAll(`.recipe-card[data-id="${recipeId}"] .add-to-list-btn`).forEach(btn => {
     const inPlan = mealPlan.has(recipeId);
     btn.classList.toggle('added', inPlan);
@@ -247,7 +296,6 @@ function toggleMealPlan(recipeId) {
 
 // ===== SHOPPING PAGE =====
 function buildIngredientList() {
-  // Map: ingredientName → [{amount, recipeName}]
   const grouped = new Map();
   const pantryUsed = new Set();
 
@@ -267,7 +315,6 @@ function buildIngredientList() {
     }
   }
 
-  // Sort alphabetically
   const sorted = [...grouped.entries()].sort((a, b) => a[0].localeCompare(b[0]));
   return { items: sorted, pantryUsed };
 }
@@ -278,7 +325,6 @@ function renderShoppingPage() {
   els.shoppingContent.hidden = !hasRecipes;
   if (!hasRecipes) return;
 
-  // Selected recipes
   els.shoppingRecipes.innerHTML = [...mealPlan.entries()].map(([id, servings]) => {
     const r = RECIPES.find(rec => rec.id === id);
     if (!r) return '';
@@ -296,7 +342,6 @@ function renderShoppingPage() {
     `;
   }).join('');
 
-  // Ingredient list
   const { items, pantryUsed } = buildIngredientList();
 
   if (!items.length) {
@@ -319,7 +364,6 @@ function renderShoppingPage() {
     }).join('');
   }
 
-  // Pantry note
   if (pantryUsed.size > 0) {
     els.shoppingPantryNote.innerHTML = `<span class="pantry-skip-note">✓ ${pantryUsed.size} pantry item${pantryUsed.size > 1 ? 's' : ''} skipped (${[...pantryUsed].join(', ')})</span>`;
   } else {
@@ -398,24 +442,13 @@ function togglePantry(ing) {
   savePantry();
   updatePantryBadge();
   renderPantryPage(els.pantrySearch.value);
-  // Re-render filter list and recipes in background so they stay current
   renderIngredientList(els.ingredientSearch.value);
-  renderRecipes();
-}
-
-// ===== INIT =====
-function init() {
-  setupObserver();
-  renderCategories();
-  renderIngredientList();
-  renderRecipes();
-  updatePantryBadge();
-  bindEvents();
+  if (currentView === 'discover') renderDiscover();
 }
 
 // ===== CATEGORIES =====
-function renderCategories() {
-  els.categoryNav.innerHTML = Object.entries(CATEGORIES).map(([key, label]) => `
+function renderDiscoverCategories() {
+  els.discoverCategoryNav.innerHTML = Object.entries(CATEGORIES).map(([key, label]) => `
     <button class="cat-btn ${key === state.activeCategory ? 'active' : ''}" data-cat="${key}">${label}</button>
   `).join('');
 }
@@ -498,19 +531,31 @@ function getMatchInfo(recipe) {
   return { have, total, full: pct === 1, pct };
 }
 
-// ===== RENDER RECIPES =====
-function renderRecipes() {
-  const recipes = getFilteredRecipes();
+// ===== MY RECIPES VIEW =====
+function renderMyRecipes() {
+  const q = (els.recipeSearch.value || '').trim().toLowerCase();
+  let recipes = RECIPES.filter(r => state.savedRecipes.has(r.id));
 
-  els.recipeCount.textContent = `${recipes.length} recipe${recipes.length !== 1 ? 's' : ''}`;
+  const hasAnySaved = recipes.length > 0;
 
-  if (state.selectedIngredients.size > 0) {
-    const tags  = [...state.selectedIngredients].slice(0, 3).map(i => `<span class="active-tag">${i}</span>`).join('');
-    const extra = state.selectedIngredients.size > 3 ? `<span class="active-tag">+${state.selectedIngredients.size - 3}</span>` : '';
-    els.activeFiltersInfo.innerHTML = tags + extra;
-  } else {
-    els.activeFiltersInfo.innerHTML = '';
+  if (q && hasAnySaved) {
+    recipes = recipes.filter(r =>
+      r.name.toLowerCase().includes(q) ||
+      r.nameAr.includes(q) ||
+      r.description.toLowerCase().includes(q) ||
+      r.tags.some(t => t.toLowerCase().includes(q))
+    );
   }
+
+  // Show / hide sections
+  els.emptyMyRecipes.hidden = hasAnySaved;
+  els.statsBar.hidden       = !hasAnySaved;
+  els.recipeGrid.hidden     = !hasAnySaved;
+
+  if (!hasAnySaved) return;
+
+  els.recipeCount.textContent = `${recipes.length} saved recipe${recipes.length !== 1 ? 's' : ''}`;
+  els.activeFiltersInfo.innerHTML = '';
 
   if (!recipes.length) {
     els.recipeGrid.innerHTML = '';
@@ -523,11 +568,8 @@ function renderRecipes() {
 
   els.recipeGrid.querySelectorAll('.recipe-card').forEach(card => {
     card.addEventListener('click', e => {
-      if (e.target.closest('.add-to-list-btn')) {
-        e.stopPropagation();
-        toggleMealPlan(+card.dataset.id);
-        return;
-      }
+      if (e.target.closest('.add-to-list-btn')) { e.stopPropagation(); toggleMealPlan(+card.dataset.id); return; }
+      if (e.target.closest('.heart-btn'))       { e.stopPropagation(); toggleSaved(+card.dataset.id);   return; }
       openRecipe(+card.dataset.id);
     });
     card.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') openRecipe(+card.dataset.id); });
@@ -535,6 +577,34 @@ function renderRecipes() {
   });
 }
 
+// ===== DISCOVER VIEW =====
+function renderDiscover() {
+  renderDiscoverCategories();
+  const recipes = getFilteredRecipes();
+
+  els.discoverCount.textContent = `${recipes.length} recipe${recipes.length !== 1 ? 's' : ''}`;
+
+  if (!recipes.length) {
+    els.discoverGrid.innerHTML = '';
+    els.discoverEmpty.hidden = false;
+    return;
+  }
+
+  els.discoverEmpty.hidden = true;
+  els.discoverGrid.innerHTML = recipes.map(r => renderCard(r)).join('');
+
+  els.discoverGrid.querySelectorAll('.recipe-card').forEach(card => {
+    card.addEventListener('click', e => {
+      if (e.target.closest('.add-to-list-btn')) { e.stopPropagation(); toggleMealPlan(+card.dataset.id); return; }
+      if (e.target.closest('.heart-btn'))       { e.stopPropagation(); toggleSaved(+card.dataset.id);   return; }
+      openRecipe(+card.dataset.id);
+    });
+    card.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') openRecipe(+card.dataset.id); });
+    if (observer) observer.observe(card);
+  });
+}
+
+// ===== CARD RENDERER =====
 function renderCard(recipe) {
   const match = getMatchInfo(recipe);
   const difficultyLabel = { easy: 'Easy', medium: 'Medium', hard: 'Advanced' }[recipe.difficulty];
@@ -545,14 +615,17 @@ function renderCard(recipe) {
     : '';
 
   const tagsHtml = recipe.tags.slice(0, 3).map(t => `<span class="tag">${t}</span>`).join('');
-
-  const inPlan = mealPlan.has(recipe.id);
+  const inPlan   = mealPlan.has(recipe.id);
+  const isSaved  = state.savedRecipes.has(recipe.id);
 
   return `
     <article class="recipe-card" data-id="${recipe.id}" role="button" tabindex="0" aria-label="${recipe.name}">
       <div class="card-img-wrap">
         <span class="card-emoji-text">${recipe.image}</span>
         <span class="card-category-badge">${categoryLabel}</span>
+        <button class="heart-btn ${isSaved ? 'saved' : ''}" data-id="${recipe.id}"
+          title="${isSaved ? 'Remove from My Recipes' : 'Save to My Recipes'}"
+          aria-label="${isSaved ? 'Unsave recipe' : 'Save recipe'}">${isSaved ? '♥' : '♡'}</button>
         ${matchBadge}
       </div>
       <div class="card-body">
@@ -696,36 +769,59 @@ function bindEvents() {
     btn.addEventListener('click', () => switchView(btn.dataset.view));
   });
 
-  // Shopping page events (delegated on document since content is dynamic)
+  // Go to Discover from empty My Recipes state
+  els.goDiscoverBtn.addEventListener('click', () => switchView('discover'));
+
+  // My Recipes search
+  let mySearchTimer;
+  els.recipeSearch.addEventListener('input', e => {
+    clearTimeout(mySearchTimer);
+    mySearchTimer = setTimeout(() => renderMyRecipes(), 200);
+  });
+
+  // Discover search
+  let discoverSearchTimer;
+  els.discoverSearch.addEventListener('input', e => {
+    clearTimeout(discoverSearchTimer);
+    discoverSearchTimer = setTimeout(() => {
+      state.searchQuery = e.target.value.trim();
+      renderDiscover();
+    }, 200);
+  });
+
+  // Discover category nav (delegated)
+  els.discoverCategoryNav.addEventListener('click', e => {
+    const btn = e.target.closest('.cat-btn');
+    if (!btn) return;
+    state.activeCategory = btn.dataset.cat;
+    renderDiscover();
+  });
+
+  // Shopping page events (delegated on document)
   document.addEventListener('click', e => {
-    // Servings down
     if (e.target.closest('.shop-srv-down')) {
       const id = +e.target.closest('.shop-srv-down').dataset.id;
       const cur = mealPlan.get(id) || 1;
       if (cur > 1) { mealPlan.set(id, cur - 1); renderShoppingPage(); }
       return;
     }
-    // Servings up
     if (e.target.closest('.shop-srv-up')) {
       const id = +e.target.closest('.shop-srv-up').dataset.id;
       const cur = mealPlan.get(id) || 1;
       if (cur < 50) { mealPlan.set(id, cur + 1); renderShoppingPage(); }
       return;
     }
-    // Remove recipe from plan
     if (e.target.closest('.shopping-remove-btn')) {
       const id = +e.target.closest('.shopping-remove-btn').dataset.id;
       mealPlan.delete(id);
       updateShoppingBadge();
       renderShoppingPage();
-      // Update card button if visible
       document.querySelectorAll(`.recipe-card[data-id="${id}"] .add-to-list-btn`).forEach(btn => {
         btn.classList.remove('added');
         btn.textContent = '+ Add to list';
       });
       return;
     }
-    // Copy list
     if (e.target.closest('#copyListBtn')) {
       navigator.clipboard.writeText(shoppingListAsText()).then(() => {
         const btn = e.target.closest('#copyListBtn');
@@ -734,12 +830,10 @@ function bindEvents() {
       }).catch(() => alert(shoppingListAsText()));
       return;
     }
-    // Clear all
     if (e.target.closest('#clearShoppingBtn')) {
       mealPlan.clear();
       updateShoppingBadge();
       renderShoppingPage();
-      // Reset all add-to-list buttons
       document.querySelectorAll('.add-to-list-btn.added').forEach(btn => {
         btn.classList.remove('added');
         btn.textContent = '+ Add to list';
@@ -747,10 +841,8 @@ function bindEvents() {
     }
   });
 
-  // Pantry page search
+  // Pantry page
   els.pantrySearch.addEventListener('input', e => renderPantryPage(e.target.value));
-
-  // Pantry page toggle buttons (delegated)
   els.pantryPageList.addEventListener('click', e => {
     const btn = e.target.closest('.pantry-toggle-btn');
     if (btn) togglePantry(btn.dataset.ing);
@@ -760,7 +852,7 @@ function bindEvents() {
   els.filterToggle.addEventListener('click', openFilterPanel);
   els.closeFilter.addEventListener('click', closeFilterPanel);
   els.filterOverlay.addEventListener('click', closeFilterPanel);
-  els.applyFilter.addEventListener('click', () => { closeFilterPanel(); renderRecipes(); });
+  els.applyFilter.addEventListener('click', () => { closeFilterPanel(); renderDiscover(); });
 
   els.ingredientSearch.addEventListener('input', e => renderIngredientList(e.target.value));
 
@@ -773,7 +865,7 @@ function bindEvents() {
     state.selectedIngredients.clear();
     renderIngredientList(els.ingredientSearch.value);
     updateFilterBadge();
-    renderRecipes();
+    if (currentView === 'discover') renderDiscover();
   });
 
   document.querySelectorAll('.mode-btn').forEach(btn => {
@@ -784,34 +876,19 @@ function bindEvents() {
     });
   });
 
-  els.categoryNav.addEventListener('click', e => {
-    const btn = e.target.closest('.cat-btn');
-    if (!btn) return;
-    state.activeCategory = btn.dataset.cat;
-    renderCategories();
-    renderRecipes();
-  });
-
-  let searchTimer;
-  els.recipeSearch.addEventListener('input', e => {
-    clearTimeout(searchTimer);
-    searchTimer = setTimeout(() => { state.searchQuery = e.target.value.trim(); renderRecipes(); }, 200);
-  });
-
   // Modal
   els.modalClose.addEventListener('click', closeModal);
   els.modalOverlay.addEventListener('click', e => { if (e.target === els.modalOverlay) closeModal(); });
 
-  if (els.clearAll) {
-    els.clearAll.addEventListener('click', () => {
-      state.selectedIngredients.clear();
-      state.searchQuery = '';
-      state.activeCategory = 'all';
-      els.recipeSearch.value = '';
-      updateFilterBadge();
-      renderCategories();
-      renderRecipes();
-    });
+  // Clear filters button in My Recipes empty state
+  if (els.emptyState) {
+    const clearBtn = els.emptyState.querySelector('#clearAll') || els.emptyState.querySelector('.clear-btn');
+    if (clearBtn) {
+      clearBtn.addEventListener('click', () => {
+        els.recipeSearch.value = '';
+        renderMyRecipes();
+      });
+    }
   }
 
   document.addEventListener('keydown', e => {
@@ -831,8 +908,18 @@ function handleIngredientClick(e) {
   item.classList.toggle('checked', state.selectedIngredients.has(ing));
   item.setAttribute('aria-checked', state.selectedIngredients.has(ing));
   updateFilterBadge();
-  renderRecipes();
+  if (currentView === 'discover') renderDiscover();
 }
 
-// ===== START =====
+// ===== INIT =====
+function init() {
+  setupObserver();
+  renderIngredientList();
+  renderMyRecipes();
+  updatePantryBadge();
+  updateShoppingBadge();
+  updateSavedBadge();
+  bindEvents();
+}
+
 document.addEventListener('DOMContentLoaded', init);

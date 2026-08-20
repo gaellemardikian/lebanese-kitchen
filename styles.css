@@ -1317,3 +1317,79 @@ body {
 ::-webkit-scrollbar-track { background: transparent; }
 ::-webkit-scrollbar-thumb { background: var(--gray-200); border-radius: 3px; }
 ::-webkit-scrollbar-thumb:hover { background: var(--gray-400); }
+
+/* ===== HEART / SAVE BUTTON ===== */
+.heart-btn {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  border: none;
+  background: rgba(255,255,255,.85);
+  backdrop-filter: blur(4px);
+  font-size: 1.05rem;
+  line-height: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  color: var(--gray-400);
+  transition: background var(--transition), color var(--transition), transform var(--transition);
+  z-index: 3;
+  box-shadow: 0 1px 4px rgba(0,0,0,.18);
+}
+
+.heart-btn:hover { background: white; color: #e53e3e; transform: scale(1.12); }
+.heart-btn.saved { color: #e53e3e; background: white; }
+.heart-btn:active { transform: scale(0.95); }
+
+/* Move category badge to bottom-left to avoid heart overlap */
+.card-category-badge {
+  top: auto !important;
+  right: auto !important;
+  bottom: 8px;
+  left: 8px;
+}
+
+/* ===== DISCOVER HINT ===== */
+.discover-hint {
+  font-size: 0.75rem;
+  color: var(--gray-400);
+  font-style: italic;
+}
+
+/* ===== 4-TAB NAV: tighten labels ===== */
+.bottom-nav-btn {
+  font-size: 0.62rem;
+  padding: 0.5rem 0.25rem;
+}
+
+/* ===== MY RECIPES EMPTY STATE ===== */
+#emptyMyRecipes {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  padding: 3rem 1.5rem;
+}
+
+#emptyMyRecipes .empty-icon {
+  font-size: 3rem;
+  margin-bottom: 0.75rem;
+}
+
+#emptyMyRecipes h3 {
+  font-size: 1.2rem;
+  font-weight: 600;
+  color: var(--gray-800);
+  margin-bottom: 0.5rem;
+}
+
+#emptyMyRecipes p {
+  color: var(--gray-600);
+  font-size: 0.9rem;
+  max-width: 280px;
+  line-height: 1.5;
+}
