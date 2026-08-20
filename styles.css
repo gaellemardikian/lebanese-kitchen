@@ -1071,6 +1071,235 @@ body {
   padding-top: 4px;
 }
 
+/* ===== ADD TO LIST BUTTON (on cards) ===== */
+.card-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  margin-top: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.add-to-list-btn {
+  flex-shrink: 0;
+  padding: 0.3rem 0.75rem;
+  border-radius: var(--radius-full);
+  border: 1.5px solid var(--gray-300);
+  background: white;
+  font-family: var(--font-sans);
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: var(--gray-600);
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all var(--transition);
+}
+
+.add-to-list-btn:hover {
+  border-color: var(--green-light);
+  color: var(--green-dark);
+}
+
+.add-to-list-btn.added {
+  background: var(--green-dark);
+  border-color: var(--green-dark);
+  color: white;
+}
+
+/* ===== SHOPPING PAGE ===== */
+.shopping-page {
+  max-width: 700px;
+  margin: 0 auto;
+  padding: 0 1rem 1rem;
+}
+
+.shopping-hero {
+  padding: 1.5rem 0 1rem;
+  border-bottom: 1px solid var(--gray-100);
+  margin-bottom: 1.25rem;
+}
+
+.shopping-hero h2 {
+  font-family: var(--font-serif);
+  font-size: 1.6rem;
+  color: var(--green-dark);
+  margin-bottom: 0.3rem;
+}
+
+.shopping-hero p { font-size: 0.875rem; color: var(--gray-600); }
+
+.shopping-empty {
+  text-align: center;
+  padding: 3rem 1rem;
+  color: var(--gray-400);
+}
+
+.shopping-empty-icon { font-size: 3rem; display: block; margin-bottom: 1rem; }
+.shopping-empty p { font-size: 0.95rem; margin-bottom: 0.4rem; }
+.shopping-empty-hint { font-size: 0.85rem !important; }
+
+.shopping-section { margin-bottom: 1.75rem; }
+
+.shopping-list-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 0.75rem;
+}
+
+.shopping-section-title {
+  font-family: var(--font-serif);
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--green-dark);
+}
+
+.copy-btn {
+  padding: 0.4rem 1rem;
+  border: 1.5px solid var(--green-dark);
+  border-radius: var(--radius-full);
+  background: white;
+  font-family: var(--font-sans);
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--green-dark);
+  cursor: pointer;
+  transition: all var(--transition);
+}
+
+.copy-btn:hover { background: var(--green-dark); color: white; }
+
+/* Selected recipe rows */
+.shopping-recipe-row {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.7rem 0.75rem;
+  background: white;
+  border: 1.5px solid var(--gray-200);
+  border-radius: var(--radius);
+  margin-bottom: 0.5rem;
+}
+
+.shopping-recipe-emoji { font-size: 1.4rem; flex-shrink: 0; }
+
+.shopping-recipe-name {
+  flex: 1;
+  font-weight: 600;
+  font-size: 0.9rem;
+  color: var(--gray-800);
+  min-width: 0;
+}
+
+.shopping-servings {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  flex-shrink: 0;
+}
+
+.shop-srv-num {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--green-dark);
+  min-width: 60px;
+  text-align: center;
+}
+
+.shop-srv-num small { font-size: 0.65rem; color: var(--gray-400); font-weight: 400; }
+
+.shopping-remove-btn {
+  background: none;
+  border: none;
+  color: var(--gray-400);
+  font-size: 1rem;
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  transition: all var(--transition);
+}
+
+.shopping-remove-btn:hover { background: var(--gray-100); color: var(--gray-800); }
+
+/* Ingredient rows */
+.shopping-pantry-note { margin-bottom: 0.75rem; }
+
+.pantry-skip-note {
+  font-size: 0.78rem;
+  color: var(--green-mid);
+  background: #e8f5e9;
+  padding: 4px 10px;
+  border-radius: var(--radius-full);
+  display: inline-block;
+}
+
+.shop-ing-row {
+  padding: 0.65rem 0.75rem;
+  background: var(--gray-50);
+  border-radius: var(--radius);
+  margin-bottom: 4px;
+}
+
+.shop-ing-main {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+
+.shop-ing-name {
+  font-weight: 600;
+  font-size: 0.9rem;
+  text-transform: capitalize;
+  color: var(--gray-800);
+}
+
+.shop-ing-amount {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--green-dark);
+  flex-shrink: 0;
+}
+
+.shop-ing-breakdown {
+  font-size: 0.72rem;
+  color: var(--gray-400);
+  margin-top: 2px;
+}
+
+.shop-ing-recipes {
+  display: block;
+  font-size: 0.72rem;
+  color: var(--gray-400);
+  margin-top: 2px;
+}
+
+.shopping-all-pantry {
+  text-align: center;
+  color: var(--green-mid);
+  font-weight: 500;
+  padding: 1rem;
+}
+
+.clear-shopping-btn {
+  display: block;
+  width: 100%;
+  padding: 0.75rem;
+  border: 1.5px solid var(--gray-200);
+  border-radius: var(--radius);
+  background: transparent;
+  font-family: var(--font-sans);
+  font-size: 0.875rem;
+  color: var(--gray-400);
+  cursor: pointer;
+  transition: all var(--transition);
+  margin-top: 0.5rem;
+}
+
+.clear-shopping-btn:hover { border-color: var(--red); color: var(--red); }
+
 /* ===== RESPONSIVE ===== */
 @media (min-width: 768px) {
   .modal { align-self: center; border-radius: var(--radius-lg); max-height: 88dvh; }
